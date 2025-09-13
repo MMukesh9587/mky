@@ -1,11 +1,291 @@
 <!DOCTYPE html>
-<html>
-  <head>
-    <meta charset="UTF-8">
-    <title>My Static Site</title>
-  </head>
-  <body>
-    <h1>नमस्ते, Firebase Hosting!</h1>
-    <p>यह मेरी पहली static website है जो Firebase Hosting पर होस्ट की गई है।</p>
-  </body>
+<html lang="hi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+ 
+  <style>
+    body {
+      font-family: "Segoe UI", sans-serif;
+      background: #f9f9f9;
+      color: #333;
+      padding: 20px;
+    }
+
+    h1 {
+      text-align: center;
+      color: #1a73e8;
+      font-weight: 700;
+    }
+
+    p {
+      text-align: center;
+      color: #178517;
+      font-weight: 700;
+    }
+
+    #map {
+      height: 400px;
+      width: 100%;
+      border-radius: 15px;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+      margin-bottom: 20px;
+    }
+
+    .info {
+      text-align: center;
+      margin-bottom: 10px;
+      font-size: 16px;
+    }
+
+    .info strong {
+      color: #444;
+    }
+
+    .buttons {
+      text-align: center;
+      margin-top: 15px;
+    }
+
+    .buttons a,
+    .buttons button {
+      display: inline-block;
+      margin: 6px 10px;
+      padding: 10px 18px;
+      background-color: #1a73e8;
+      color: white;
+      text-decoration: none;
+      border: none;
+      border-radius: 30px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.3s ease;
+    }
+
+    .buttons a:hover,
+    .buttons button:hover {
+      background-color: #0c56c3;
+    }
+
+    .note {
+      font-size: 14px;
+      text-align: center;
+      margin-top: 10px;
+      color: #777;
+    }
+  </style>
+</head>
+<body>
+
+<h1>📍 Dropped Pin</h1>
+<P>📍Just Click On The Map – Get Location, Copy, And Share!📍</P>
+
+<div id="map"></div>
+
+<div class="info">
+  <p><strong>🗺️Location:</strong> <span id="latlng">--- Click on Map ---📍</span></p>
+  <a id="gmapLink" href="#" target="_blank">🌏 Open in Google Maps</a>
+</div>
+
+<div class="buttons">
+  <button onclick="copyLink()">📋 🔗Copy link</button>
+  <button onclick="getLiveLocation()">📍 Live Location</button>
+  <a id="whatsappShare" href="#" target="_blank">🟢 WhatsApp</a>
+  <a id="emailShare" href="#" target="_blank">📧 Email</a>
+</div>
+
+<p class="note">➡️ Click And Drop A Pin On The Map | Copy Or Share Location</p>
+
+<!-- Google Maps JS API -->
+<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyC117lB_sC9UHo9g_zKFfNGtS3NUo3QC-s"></script>
+
+<script>
+  let currentLink = "";
+  let map;
+  let marker;
+
+  function initMap() {
+    const defaultLoc = { lat: 26.9124, lng: 75.7873 }; // Jaipur
+    map = new google.maps.Map(document.getElementById("map"), {
+      zoom: 6,
+      center: defaultLoc,
+    });
+
+    map.addListener("click", function (e) {
+      const lat = e.latLng.lat().toFixed(6);
+      const lng = e.latLng.lng().toFixed(6);
+      const link = `https://www.google.com/maps?q=${lat},${lng}`;
+      currentLink = link;
+
+      document.getElementById("latlng").innerText = `${lat}, ${lng}`;
+      document.getElementById("gmapLink").href = link;
+
+      document.getElementById("whatsappShare").href = `https://wa.me/?text=📍%20Location:%20${encodeURIComponent(link)}`;
+      document.getElementById("emailShare").href = `mailto:?subject=Dropped%20Pin&body=📍%20Location:%20${encodeURIComponent(link)}`;
+
+      if (marker) marker.setMap(null);
+      marker = new google.maps.Marker({
+        position: { lat: parseFloat(lat), lng: parseFloat(lng) },
+        map: map,
+      });
+    });
+  }
+
+  function copyLink() {
+    if (!currentLink) {
+      alert("Please Click On The Map First.");
+      return;
+    }
+    navigator.clipboard.writeText(currentLink).then(() => {
+      alert("🔗 Link Copied!");
+    });
+  }
+
+  function getLiveLocation() {
+    if (!navigator.geolocation) {
+      alert("Your Browser Does Not Support Geolocation.");
+      return;
+    }
+
+    // Show loading message
+    document.getElementById("latlng").innerText = "🔍 The Location Is Being Searched...";
+
+    // High accuracy options for better location precision
+    const options = {
+      enableHighAccuracy: true,    // Use GPS for high accuracy
+      timeout: 15000,              // 15 seconds timeout
+      maximumAge: 0                // Don't use cached location
+    };
+
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const lat = position.coords.latitude.toFixed(6);
+        const lng = position.coords.longitude.toFixed(6);
+        const accuracy = position.coords.accuracy;
+        const link = `https://www.google.com/maps?q=${lat},${lng}`;
+        currentLink = link;
+
+        // Display location with accuracy info
+        document.getElementById("latlng").innerText = `${lat}, ${lng} (±${Math.round(accuracy)}m)`;
+        document.getElementById("gmapLink").href = link;
+
+        document.getElementById("whatsappShare").href = `https://wa.me/?text=📍%20Location:%20${encodeURIComponent(link)}`;
+        document.getElementById("emailShare").href = `mailto:?subject=Dropped%20Pin&body=📍%20Location:%20${encodeURIComponent(link)}`;
+
+        // Update map center and zoom to user's location
+        map.setCenter({ lat: parseFloat(lat), lng: parseFloat(lng) });
+        map.setZoom(18); // Higher zoom for better precision view
+
+        // Remove existing marker and add new one at user's location
+        if (marker) marker.setMap(null);
+        marker = new google.maps.Marker({
+          position: { lat: parseFloat(lat), lng: parseFloat(lng) },
+          map: map,
+          title: `Your Location (±${Math.round(accuracy)}m accuracy)`
+        });
+
+        // Add accuracy circle to show precision
+        const accuracyCircle = new google.maps.Circle({
+          strokeColor: '#1a73e8',
+          strokeOpacity: 0.8,
+          strokeWeight: 2,
+          fillColor: '#1a73e8',
+          fillOpacity: 0.15,
+          map: map,
+          center: { lat: parseFloat(lat), lng: parseFloat(lng) },
+          radius: accuracy
+        });
+      },
+      (error) => {
+        let errorMessage = "Could Not Get Location. ";
+        
+        switch(error.code) {
+          case error.PERMISSION_DENIED:
+            errorMessage += "Please allow location.";
+            break;
+          case error.POSITION_UNAVAILABLE:
+            errorMessage += "Location information is not available.";
+            break;
+          case error.TIMEOUT:
+            errorMessage += "It's taking time to find the location. Please try again.";
+            break;
+          default:
+            errorMessage += "An unknown error has occurred.";
+            break;
+        }
+        
+        alert(errorMessage);
+        document.getElementById("latlng").innerText = "--- Click on Map ---📍";
+      },
+      options
+    );
+  }
+
+  window.onload = initMap;
+</script>
+
+</body>
 </html>
+
+<h2>How to Use the Dropped Pin Tool</h2>
+<ol>
+  <li>Click on "Generate Pin"</li>
+  <li>Allow location permission (or enter manually)</li>
+  <li>Copy the generated location link</li>
+  <li>Share it with anyone, anywhere</li>
+</ol>
+<div class="separator" style="clear: both;"><a href="https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEig73xV71f3hNEnRvu4VBhTeGT7cFyRaYsQIxqwvXBlSYnHDeezcOI0hPQGIc5jpzWVYscBPiW5rp1h4rrJSGqkZfIwj4JPBZhh4_BPP7skWJP2cbYOKBBvkKzaYjpRZqB3T1KAbfC-kWk0jWJL0GQzvfWQDmG7lTmBWn-teLsfTiwh2qjderzZcC82mTWg/s1089/How-to-Drop-a-Pin.webp" style="display: block; padding: 1em 0; text-align: center; "><img alt="" border="0" width="320" data-original-height="615" data-original-width="1089" src="https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEig73xV71f3hNEnRvu4VBhTeGT7cFyRaYsQIxqwvXBlSYnHDeezcOI0hPQGIc5jpzWVYscBPiW5rp1h4rrJSGqkZfIwj4JPBZhh4_BPP7skWJP2cbYOKBBvkKzaYjpRZqB3T1KAbfC-kWk0jWJL0GQzvfWQDmG7lTmBWn-teLsfTiwh2qjderzZcC82mTWg/s320/How-to-Drop-a-Pin.webp"/></a></div>
+<h2>Key Features of DroppedPin.xyz</h2>
+<ul>
+  <li>✅ No app installation needed</li>
+  <li>✅ Accurate GPS location</li>
+  <li>✅ One-click sharing</li>
+  <li>✅ Mobile & desktop friendly</li>
+  <li>✅ 100% free and anonymous</li>
+</ul>
+<h2>Who Can Use This Dropped Pin Tool?</h2>
+<p>
+  🧑‍💼 Business deliveries<br>
+  🚗 Cab & auto drivers<br>
+  📦 Courier services<br>
+  👨‍👩‍👧 Friends & family meetups<br>
+  🛠️ Field workers & technicians
+</p>
+<h2>📌 Frequently Asked Questions</h2>
+<h3>❓ Is this tool free to use?</h3>
+<p>Yes, it's 100% free for all users, no registration required.</p>
+
+<h3>❓ Does this work on mobile?</h3>
+<p>Yes, it is fully mobile responsive and GPS-supported.</p>
+
+<h3>❓ Can I generate a pin without GPS?</h3>
+<p>Yes, you can enter your address manually too.</p>
+
+
+
+
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "WebApplication",
+  "name": "Dropped Pin",
+  "url": "https://droppedpin.xyz",
+  "applicationCategory": "Utility",
+  "operatingSystem": "All",
+  "browserRequirements": "Requires JavaScript. Compatible with modern browsers.",
+  "description": "Dropped Pin Finder helps you locate any pinned location on the map with latitude and longitude coordinates. Instantly get map links for easy sharing.",
+  "inLanguage": "en",
+  "offers": {
+    "@type": "Offer",
+    "price": "0.00",
+
+    "priceCurrency": "USD"
+  },
+  "creator": {
+    "@type": "Organization",
+    "name": "Dropped Pin",
+    "url": "https://droppedpin.xyz"
+  },
+}
+</script>
