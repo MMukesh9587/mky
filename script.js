@@ -1,5 +1,4 @@
-<script>
-  let currentLink = "";
+ let currentLink = "";
   let map;
   let marker;
 
@@ -121,4 +120,3 @@
   }
 
   window.onload = initMap;
-</script>
